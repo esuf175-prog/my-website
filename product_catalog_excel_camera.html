@@ -1,0 +1,1104 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>แคตาล็อกสินค้า</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --surface: #ffffff;
+    --surface2: #f0ede6;
+    --accent: #c8a96e;
+    --accent-dark: #a07840;
+    --text: #1a1612;
+    --text-muted: #7a7068;
+    --text-light: #b0a898;
+    --border: rgba(0,0,0,0.08);
+    --shadow: 0 2px 20px rgba(0,0,0,0.06);
+    --shadow-hover: 0 8px 32px rgba(0,0,0,0.12);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--text);
+    color: #fff;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    letter-spacing: 0.02em;
+    color: var(--accent);
+  }
+
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: 'Sarabun', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-ghost {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.18); }
+
+  .btn-accent {
+    background: var(--accent);
+    color: var(--text);
+    font-weight: 600;
+  }
+  .btn-accent:hover { background: var(--accent-dark); color: #fff; }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-danger {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+  }
+  .btn-danger:hover { background: #fee2e2; }
+
+  /* MAIN */
+  main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  /* UPLOAD ZONE */
+  #uploadSection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+  }
+
+  .upload-box {
+    background: var(--surface);
+    border: 2px dashed var(--accent);
+    border-radius: 20px;
+    padding: 4rem 3rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    max-width: 480px;
+    width: 100%;
+    position: relative;
+  }
+
+  .upload-box:hover, .upload-box.drag-over {
+    background: #fdf9f2;
+    border-color: var(--accent-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+  }
+
+  .upload-icon {
+    width: 72px;
+    height: 72px;
+    background: #fdf3e3;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+  }
+
+  .upload-icon svg { width: 36px; height: 36px; stroke: var(--accent); }
+
+  .upload-box h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .upload-box p { color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.6; font-size: 14px; }
+
+  .upload-note {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 10px 16px;
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 1rem;
+  }
+
+  .upload-note strong { color: var(--text-muted); }
+
+  /* CATALOG SECTION */
+  #catalogSection { display: none; }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .stat-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 7px 16px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .stat-chip .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .dot-all { background: var(--text-muted); }
+  .dot-ok { background: #22c55e; }
+  .dot-missing { background: #f59e0b; }
+
+  .stat-chip strong { font-weight: 600; }
+
+  /* BIN FILTER */
+  .bin-filter-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+
+  .bin-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .bin-chip {
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-family: 'Sarabun', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    transition: all 0.18s;
+  }
+
+  .bin-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent-dark);
+  }
+
+  .bin-chip.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .bin-chip .chip-count {
+    display: inline-block;
+    background: rgba(0,0,0,0.1);
+    border-radius: 100px;
+    font-size: 11px;
+    padding: 1px 6px;
+    margin-left: 4px;
+  }
+
+  .bin-chip.active .chip-count {
+    background: rgba(0,0,0,0.15);
+  }
+
+  /* TOOLBAR */
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .search-wrap {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+  }
+
+  .search-wrap svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    stroke: var(--text-light);
+  }
+
+  #searchBox {
+    width: 100%;
+    padding: 10px 12px 10px 38px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  #searchBox:focus { border-color: var(--accent); }
+
+  /* GRID */
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+
+  .product-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    transition: all 0.2s;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .product-card:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-3px);
+    border-color: rgba(200,169,110,0.3);
+  }
+
+  /* IMAGE AREA */
+  .card-img-wrap {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    background: var(--surface2);
+    overflow: hidden;
+  }
+
+  .card-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .no-img-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--text-light);
+    font-size: 12px;
+  }
+
+  .no-img-placeholder svg { width: 32px; height: 32px; stroke: var(--text-light); opacity: 0.5; }
+
+  /* IMAGE OVERLAY ACTIONS */
+  .img-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .card-img-wrap:hover .img-overlay { opacity: 1; }
+
+  .img-action-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.95);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s, background 0.15s;
+    color: var(--text);
+  }
+
+  .img-action-btn:hover { transform: scale(1.1); background: #fff; }
+  .img-action-btn svg { width: 18px; height: 18px; stroke: var(--text); }
+  .img-action-btn.del svg { stroke: #dc2626; }
+
+  .has-img-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(34,197,94,0.9);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 100px;
+    backdrop-filter: blur(4px);
+  }
+
+  /* CARD BODY */
+  .card-body { padding: 14px 16px 16px; }
+
+  .card-itemnum {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+  }
+
+  .card-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 8px;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .bin-tag {
+    display: inline-block;
+    background: #fdf3e3;
+    color: var(--accent-dark);
+    border: 1px solid rgba(200,169,110,0.3);
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    letter-spacing: 0.04em;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 0;
+    color: var(--text-light);
+    display: none;
+  }
+
+  .empty-state svg { width: 48px; height: 48px; stroke: var(--text-light); margin-bottom: 12px; opacity: 0.5; }
+  .empty-state p { font-size: 15px; }
+
+  /* MODAL BACKDROP */
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-backdrop.open { display: flex; }
+
+  /* MODAL BOX */
+  .modal {
+    background: var(--surface);
+    border-radius: 16px;
+    width: 380px;
+    max-width: 95vw;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+    animation: modalIn 0.25s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.94) translateY(16px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .modal-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-header h3 { font-size: 16px; font-weight: 600; }
+
+  .modal-close {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-close:hover { background: #e5e0d8; }
+  .modal-close svg { width: 16px; height: 16px; stroke: var(--text-muted); }
+
+  .modal-body { padding: 20px; }
+
+  video#camPreview {
+    width: 100%;
+    border-radius: var(--radius-sm);
+    background: #000;
+    display: block;
+    margin-bottom: 14px;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+  }
+
+  canvas#snapCanvas { display: none; }
+
+  .modal-footer {
+    padding: 0 20px 20px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .modal-footer .btn { flex: 1; justify-content: center; }
+
+  /* TOAST */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--text);
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--text-light); border-radius: 3px; }
+
+  @media (max-width: 600px) {
+    header { padding: 0 1rem; }
+    .logo { font-size: 18px; }
+    main { padding: 1rem; }
+    .product-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    .card-img-wrap { height: 140px; }
+    .img-overlay { opacity: 1; background: rgba(0,0,0,0.25); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Catalog Pro</div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" onclick="document.getElementById('xlsxInput').click()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      นำเข้า Excel
+    </button>
+    <input type="file" id="xlsxInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(event)">
+  </div>
+</header>
+
+<main>
+
+  <!-- UPLOAD SECTION -->
+  <div id="uploadSection">
+    <div class="upload-box" id="uploadBox"
+      onclick="document.getElementById('xlsxInput').click()"
+      ondragover="handleDragOver(event)"
+      ondragleave="handleDragLeave(event)"
+      ondrop="handleDrop(event)">
+      <div class="upload-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/><path d="M15 13l-3-3-3 3M12 10v6"/>
+        </svg>
+      </div>
+      <h2>นำเข้าไฟล์ Excel</h2>
+      <p>คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่<br>ระบบจะแสดงสินค้าพร้อมให้เพิ่มรูปได้ทันที</p>
+      <button class="btn btn-accent" onclick="event.stopPropagation(); document.getElementById('xlsxInput').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        เลือกไฟล์
+      </button>
+      <div class="upload-note">
+        <strong>คอลัมน์ที่ต้องการ:</strong> ITEMNUM &nbsp;/&nbsp; DESCRIPTION &nbsp;/&nbsp; BIN
+      </div>
+    </div>
+  </div>
+
+  <!-- CATALOG SECTION -->
+  <div id="catalogSection">
+
+    <div class="stats-bar">
+      <div class="stat-chip"><span class="dot dot-all"></span>ทั้งหมด <strong id="statTotal">0</strong> รายการ</div>
+      <div class="stat-chip"><span class="dot dot-ok"></span>มีรูปแล้ว <strong id="statWithImg">0</strong></div>
+      <div class="stat-chip"><span class="dot dot-missing"></span>ยังไม่มีรูป <strong id="statNoImg">0</strong></div>
+    </div>
+
+    <!-- BIN FILTER -->
+    <div class="bin-filter-wrap" id="binFilterWrap" style="display:none; margin-bottom:1.25rem;">
+      <div class="bin-filter-label">กรองตาม BIN</div>
+      <div class="bin-chips" id="binChips"></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="searchBox" placeholder="ค้นหาสินค้า..." oninput="renderGrid()">
+      </div>
+      <button class="btn btn-outline" onclick="document.getElementById('xlsxInput').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        เปลี่ยนไฟล์
+      </button>
+      <button class="btn btn-accent" onclick="downloadAllImages()" id="downloadBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        ดาวน์โหลดรูป
+      </button>
+    </div>
+
+    <div class="product-grid" id="productGrid"></div>
+    <div class="empty-state" id="emptyState">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <p>ไม่พบสินค้าที่ค้นหา</p>
+    </div>
+
+  </div>
+</main>
+
+<!-- CAMERA MODAL -->
+<div class="modal-backdrop" id="cameraModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">ถ่ายรูปสินค้า</h3>
+      <button class="modal-close" onclick="closeCam()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <video id="camPreview" autoplay playsinline muted></video>
+      <canvas id="snapCanvas"></canvas>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeCam()">ยกเลิก</button>
+      <button class="btn btn-accent" onclick="capturePhoto()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        ถ่ายรูป
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- URL MODAL -->
+<div class="modal-backdrop" id="urlModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="urlModalTitle">ดาวน์โหลดรูปจาก URL</h3>
+      <button class="modal-close" onclick="closeUrlModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px; line-height:1.6;">วาง URL ของรูปภาพที่ต้องการ เช่น https://example.com/image.jpg</p>
+      <input type="url" id="urlInput" placeholder="https://..." style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:'Sarabun',sans-serif; outline:none; color:var(--text); background:var(--surface); box-sizing:border-box;">
+      <div id="urlPreviewWrap" style="display:none; margin-top:12px; border-radius:var(--radius-sm); overflow:hidden; border:1px solid var(--border);">
+        <img id="urlPreview" src="" alt="preview" style="width:100%; max-height:200px; object-fit:contain; display:block; background:#f5f5f5;">
+      </div>
+      <p id="urlError" style="display:none; font-size:12px; color:#dc2626; margin-top:8px;"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeUrlModal()">ยกเลิก</button>
+      <button class="btn btn-outline" onclick="previewUrl()" style="flex:0.8;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        ดูตัวอย่าง
+      </button>
+      <button class="btn btn-accent" onclick="fetchUrlImage()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        ใช้รูปนี้
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+let products = [];
+let currentIdx = null;
+let camStream = null;
+let activeBin = 'ALL';
+
+/* ─── FILE HANDLING ─── */
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('uploadBox').classList.add('drag-over');
+}
+function handleDragLeave() {
+  document.getElementById('uploadBox').classList.remove('drag-over');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadBox').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) parseFile(file);
+}
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (file) parseFile(file);
+  e.target.value = '';
+}
+
+function parseFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  const reader = new FileReader();
+  if (ext === 'csv') {
+    reader.onload = ev => processRows(XLSX.utils.sheet_to_json(
+      XLSX.read(ev.target.result, { type: 'string' }).Sheets[
+        XLSX.read(ev.target.result, { type: 'string' }).SheetNames[0]
+      ], { defval: '' }
+    ));
+    reader.readAsText(file, 'UTF-8');
+  } else {
+    reader.onload = ev => {
+      const wb = XLSX.read(ev.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      processRows(XLSX.utils.sheet_to_json(ws, { defval: '' }));
+    };
+    reader.readAsArrayBuffer(file);
+  }
+}
+
+function processRows(rows) {
+  if (!rows.length) { showToast('ไม่พบข้อมูลในไฟล์'); return; }
+  const keys = Object.keys(rows[0]);
+  const itemnumKey = keys.find(k => /itemnum|item.num|item_num|รหัส/i.test(k)) || keys[0];
+  const descKey    = keys.find(k => /description|desc|ชื่อ|รายละเอียด/i.test(k)) || keys[1];
+  const binKey     = keys.find(k => /^bin$/i.test(k)) || keys[2];
+
+  products = rows.map((r, i) => ({
+    id:      i,
+    itemnum: String(r[itemnumKey] || '').trim() || '#' + (i + 1),
+    desc:    String(r[descKey]    || '').trim(),
+    bin:     String(r[binKey]     || '').trim(),
+    img:     null
+  }));
+
+  activeBin = 'ALL';
+  document.getElementById('uploadSection').style.display = 'none';
+  document.getElementById('catalogSection').style.display = 'block';
+  renderBinChips();
+  renderGrid();
+  showToast('โหลดข้อมูล ' + products.length + ' รายการ เรียบร้อย');
+}
+
+/* ─── BIN FILTER ─── */
+function renderBinChips() {
+  const bins = [...new Set(products.map(p => p.bin).filter(Boolean))].sort();
+  const wrap = document.getElementById('binFilterWrap');
+  const container = document.getElementById('binChips');
+  if (!bins.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+
+  let html = `<button class="bin-chip ${activeBin === 'ALL' ? 'active' : ''}" onclick="setBin('ALL')">ทั้งหมด <span class="chip-count">${products.length}</span></button>`;
+  bins.forEach(bin => {
+    const count = products.filter(p => p.bin === bin).length;
+    const safe = bin.replace(/'/g, "\\'");
+    html += `<button class="bin-chip ${activeBin === bin ? 'active' : ''}" onclick="setBin('${safe}')">${escHtml(bin)} <span class="chip-count">${count}</span></button>`;
+  });
+  container.innerHTML = html;
+}
+
+function setBin(bin) {
+  activeBin = bin;
+  renderBinChips();
+  renderGrid();
+}
+
+/* ─── RENDER GRID ─── */
+function renderGrid() {
+  const q = (document.getElementById('searchBox').value || '').toLowerCase();
+  const filtered = products.filter(p => {
+    const matchBin = activeBin === 'ALL' || p.bin === activeBin;
+    const matchQ   = !q || p.itemnum.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q) || p.bin.toLowerCase().includes(q);
+    return matchBin && matchQ;
+  });
+
+  document.getElementById('statTotal').textContent   = products.length;
+  document.getElementById('statWithImg').textContent = products.filter(p => p.img).length;
+  document.getElementById('statNoImg').textContent   = products.filter(p => !p.img).length;
+
+  const grid  = document.getElementById('productGrid');
+  const empty = document.getElementById('emptyState');
+
+  if (!filtered.length) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  grid.innerHTML = filtered.map((p, animIdx) => `
+    <div class="product-card" style="animation-delay:${animIdx * 0.04}s">
+      <div class="card-img-wrap">
+        ${p.img
+          ? `<img src="${p.img}" alt="${escHtml(p.itemnum)}" loading="lazy"><span class="has-img-badge">✓ มีรูป</span>`
+          : `<div class="no-img-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span>ยังไม่มีรูป</span>
+            </div>`
+        }
+        <div class="img-overlay">
+          <button class="img-action-btn" onclick="openCam(${p.id})" title="ถ่ายรูป">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </button>
+          <button class="img-action-btn" onclick="pickImage(${p.id})" title="เลือกรูปจากคลัง">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </button>
+          <button class="img-action-btn" onclick="openUrlModal(${p.id})" title="ดาวน์โหลดรูปจาก URL">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </button>
+          ${p.img ? `<button class="img-action-btn" onclick="downloadImg(${p.id})" title="บันทึกรูป">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </button>` : ''}
+          ${p.img ? `<button class="img-action-btn del" onclick="removeImg(${p.id})" title="ลบรูป">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              <path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+            </svg>
+          </button>` : ''}
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-itemnum">${escHtml(p.itemnum)}</div>
+        <div class="card-name" title="${escHtml(p.desc)}">${escHtml(p.desc)}</div>
+        ${p.bin ? `<div class="card-bin"><span class="bin-tag">${escHtml(p.bin)}</span></div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ─── IMAGE ACTIONS ─── */
+function openCam(idx) {
+  currentIdx = idx;
+  const p = products.find(x => x.id === idx);
+  document.getElementById('modalTitle').textContent = 'ถ่ายรูป: ' + p.itemnum;
+  document.getElementById('cameraModal').classList.add('open');
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+    .then(s => {
+      camStream = s;
+      document.getElementById('camPreview').srcObject = s;
+    })
+    .catch(() => {
+      closeCam();
+      showToast('ไม่สามารถเข้าถึงกล้องได้ — ลองเลือกรูปจากคลังแทน');
+    });
+}
+
+function closeCam() {
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  document.getElementById('cameraModal').classList.remove('open');
+  document.getElementById('camPreview').srcObject = null;
+}
+
+function capturePhoto() {
+  const video = document.getElementById('camPreview');
+  const canvas = document.getElementById('snapCanvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+  const idx = products.findIndex(x => x.id === currentIdx);
+  if (idx !== -1) { products[idx].img = dataUrl; }
+  closeCam();
+  renderGrid();
+  showToast('บันทึกรูปสินค้าเรียบร้อย');
+}
+
+function pickImage(idx) {
+  currentIdx = idx;
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const i = products.findIndex(x => x.id === currentIdx);
+      if (i !== -1) { products[i].img = ev.target.result; }
+      renderGrid();
+      showToast('เพิ่มรูปสินค้าเรียบร้อย');
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+function removeImg(idx) {
+  const i = products.findIndex(x => x.id === idx);
+  if (i !== -1) { products[i].img = null; }
+  renderGrid();
+  showToast('ลบรูปสินค้าแล้ว');
+}
+
+function downloadImg(idx) {
+  const p = products.find(x => x.id === idx);
+  if (!p || !p.img) return;
+  const a = document.createElement('a');
+  a.href = p.img;
+  a.download = (p.itemnum || 'image') + '.jpg';
+  a.click();
+}
+
+/* ─── URL IMAGE ─── */
+function openUrlModal(idx) {
+  currentIdx = idx;
+  const p = products.find(x => x.id === idx);
+  document.getElementById('urlModalTitle').textContent = 'ดาวน์โหลดรูป: ' + p.itemnum;
+  document.getElementById('urlInput').value = '';
+  document.getElementById('urlPreviewWrap').style.display = 'none';
+  document.getElementById('urlError').style.display = 'none';
+  document.getElementById('urlModal').classList.add('open');
+  setTimeout(() => document.getElementById('urlInput').focus(), 100);
+}
+
+function closeUrlModal() {
+  document.getElementById('urlModal').classList.remove('open');
+}
+
+function previewUrl() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) return;
+  const preview = document.getElementById('urlPreview');
+  const wrap = document.getElementById('urlPreviewWrap');
+  const err = document.getElementById('urlError');
+  err.style.display = 'none';
+  wrap.style.display = 'block';
+  preview.src = url;
+  preview.onerror = () => {
+    wrap.style.display = 'none';
+    err.textContent = 'ไม่สามารถโหลดรูปได้ — ตรวจสอบ URL อีกครั้ง';
+    err.style.display = 'block';
+  };
+}
+
+function fetchUrlImage() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) { showToast('กรุณาใส่ URL ของรูปภาพ'); return; }
+
+  const canvas = document.getElementById('snapCanvas');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+
+  img.onload = () => {
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    ctx.drawImage(img, 0, 0);
+    try {
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+      const i = products.findIndex(x => x.id === currentIdx);
+      if (i !== -1) { products[i].img = dataUrl; }
+      closeUrlModal();
+      renderGrid();
+      showToast('โหลดรูปจาก URL เรียบร้อย');
+    } catch {
+      /* CORS block — fallback: ใช้ URL โดยตรง */
+      const i = products.findIndex(x => x.id === currentIdx);
+      if (i !== -1) { products[i].img = url; }
+      closeUrlModal();
+      renderGrid();
+      showToast('เพิ่มรูปจาก URL เรียบร้อย');
+    }
+  };
+
+  img.onerror = () => {
+    const err = document.getElementById('urlError');
+    err.textContent = 'ไม่สามารถโหลดรูปได้ — ตรวจสอบ URL อีกครั้ง';
+    err.style.display = 'block';
+  };
+
+  img.src = url;
+}
+
+document.getElementById('urlModal').addEventListener('click', function(e) {
+  if (e.target === this) closeUrlModal();
+});
+
+document.getElementById('urlInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') fetchUrlImage();
+});
+
+/* ─── DOWNLOAD IMAGES ─── */
+function downloadSingleImg(idx) {
+  const p = products.find(x => x.id === idx);
+  if (!p || !p.img) return;
+  const a = document.createElement('a');
+  a.href = p.img;
+  a.download = (p.itemnum || 'item') + '.jpg';
+  a.click();
+}
+
+function downloadImg(idx) { downloadSingleImg(idx); showToast('ดาวน์โหลดรูปเรียบร้อย'); }
+
+async function downloadAllImages() {
+  const withImg = products.filter(p => p.img);
+  if (!withImg.length) { showToast('ยังไม่มีรูปสินค้าเลย'); return; }
+
+  /* ถ้ามีรูปเดียว ดาวน์โหลดตรงๆ */
+  if (withImg.length === 1) {
+    downloadSingleImg(withImg[0].id);
+    showToast('ดาวน์โหลดรูป 1 ไฟล์เรียบร้อย');
+    return;
+  }
+
+  /* หลายรูป — รวมเป็น ZIP ด้วย JSZip */
+  showToast('กำลังสร้าง ZIP...');
+  const btn = document.getElementById('downloadBtn');
+  btn.disabled = true;
+  btn.textContent = 'กำลังสร้าง...';
+
+  try {
+    /* โหลด JSZip จาก CDN */
+    if (!window.JSZip) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+
+    const zip = new JSZip();
+    const folder = zip.folder('product-images');
+
+    withImg.forEach(p => {
+      /* แปลง dataURL → binary */
+      const base64 = p.img.split(',')[1];
+      const ext = p.img.startsWith('data:image/png') ? 'png' : 'jpg';
+      folder.file((p.itemnum || 'item_' + p.id) + '.' + ext, base64, { base64: true });
+    });
+
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'product-images.zip';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    showToast('ดาวน์โหลด ' + withImg.length + ' รูป เรียบร้อย');
+  } catch (e) {
+    showToast('เกิดข้อผิดพลาด — ลองใหม่อีกครั้ง');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> ดาวน์โหลดรูป`;
+  }
+}
+
+/* ─── TOAST ─── */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ─── CLOSE MODAL ON BACKDROP CLICK ─── */
+document.getElementById('cameraModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCam();
+});
+</script>
+</body>
+</html>
